@@ -1,4 +1,4 @@
-﻿using CounterStrikeSharp.API;
+using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Entities.Constants;
 using CounterStrikeSharp.API.Modules.Memory;
@@ -597,18 +597,31 @@ namespace WeaponPaints
 		{
 			weaponInfo = null;
 
-			// Check if player has weapons info for their slot and team
-			if (!GPlayerWeaponsInfo.TryGetValue(player.Slot, out var teamInfo) || 
-			    !teamInfo.TryGetValue(player.Team, out var teamWeapons))
+			// Check if player has weapons info for their slot
+			if (!GPlayerWeaponsInfo.TryGetValue(player.Slot, out var teamInfo))
 			{
 				return false;
 			}
 
-			// Check if the specified weapon has a paint/skin change
-			if (!teamWeapons.TryGetValue(weaponDefIndex, out var value) || value.Paint <= 0) return false;
-			
-			weaponInfo = value; // Assign the out variable when it exists
-			return true;
+			// First try to get skin for player's own team
+			if (teamInfo.TryGetValue(player.Team, out var teamWeapons) &&
+			    teamWeapons.TryGetValue(weaponDefIndex, out var value) && value.Paint > 0)
+			{
+				weaponInfo = value;
+				return true;
+			}
+
+			// GAMEPOINT: fallback - if player's team has no skin for this weapon, use the opposite team's skin
+			// (T with USP-S / CT with AK-47 on aim servers)
+			var oppositeTeam = player.Team == CsTeam.Terrorist ? CsTeam.CounterTerrorist : CsTeam.Terrorist;
+			if (teamInfo.TryGetValue(oppositeTeam, out var oppWeapons) &&
+			    oppWeapons.TryGetValue(weaponDefIndex, out var oppValue) && oppValue.Paint > 0)
+			{
+				weaponInfo = oppValue;
+				return true;
+			}
+
+			return false;
 		}
 
 		private static float ViewAsFloat(uint value)
