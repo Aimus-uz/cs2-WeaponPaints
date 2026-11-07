@@ -391,6 +391,13 @@ namespace WeaponPaints
 
 			CEconItemView item = pawn.EconGloves;
 
+			// GAMEPOINT: no gloves chosen in WeaponPaints for this team -> keep the player's own inventory gloves untouched
+			if (!GPlayersGlove.TryGetValue(player.Slot, out var chosenGloves) ||
+			    !chosenGloves.TryGetValue(player.Team, out var chosenGloveId) ||
+			    chosenGloveId == 0 ||
+			    !HasChangedPaint(player, chosenGloveId, out var chosenInfo) || chosenInfo == null)
+				return;
+
 			item.NetworkedDynamicAttributes.Attributes.RemoveAll();
 			item.AttributeList.Attributes.RemoveAll();
 
