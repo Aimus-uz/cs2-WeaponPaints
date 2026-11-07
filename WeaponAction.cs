@@ -19,6 +19,11 @@ namespace WeaponPaints
 			
 			var designerName = weapon.DesignerName ?? "";
 			bool isKnife = designerName.Contains("knife") || designerName.Contains("bayonet");
+
+			// GAMEPOINT: no skin chosen in WeaponPaints for this weapon -> keep the player's own inventory skin untouched
+			if (!isKnife && !_config.Additional.GiveRandomSkin &&
+			    !HasChangedPaint(player, weapon.AttributeManager.Item.ItemDefinitionIndex, out _))
+				return;
 			
 			switch (isKnife)
 			{
@@ -537,8 +542,9 @@ namespace WeaponPaints
 
 		private static void GivePlayerPin(CCSPlayerController player)
 		{
+			// GAMEPOINT: pinId 0 = no pin chosen in WeaponPaints -> keep the player's own inventory pin
 			if (!GPlayersPin.TryGetValue(player.Slot, out var pinInfo) ||
-			    !pinInfo.TryGetValue(player.Team, out var pinId)) return;
+			    !pinInfo.TryGetValue(player.Team, out var pinId) || pinId <= 0) return;
 			if (player.InventoryServices == null) return;
 			
 			player.InventoryServices.Rank[5] = pinId > 0 ? (MedalRank_t)pinId : MedalRank_t.MEDAL_RANK_NONE;
